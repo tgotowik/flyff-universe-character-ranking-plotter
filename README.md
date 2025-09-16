@@ -16,4 +16,4 @@ Of course, anyone else can use it too.
 
 # To Do:
 - [ ] Fonts for Japanese and Chinese server to keep original names
-- Long term plots
+- [ ] Long term plots
