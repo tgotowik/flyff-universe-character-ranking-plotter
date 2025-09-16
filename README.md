@@ -14,6 +14,11 @@ Of course, anyone else can use it too.
     - Call ```python3 flyff-character-ranking-plotter.py --import-csv ./Daten.csv```
     - This will generate plots from all collected data to plots/spielestyler
 
+# Example
+## Single date plot
+![Plot Example](plots/2025-09-16-flyff-universe-character-ranking-plot.png)
+
+
 # To Do:
 - [ ] Fonts for Japanese and Chinese server to keep original names
 - [ ] Long term plots
