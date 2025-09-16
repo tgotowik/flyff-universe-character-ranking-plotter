@@ -7,6 +7,7 @@ import json
 import re
 import argparse
 import sys
+import os
 
 DEBUG = False
 
@@ -135,7 +136,7 @@ def new_plot(df, date=TODAY, path_spielestyler=False):
         )
     else:
         plt.savefig(
-            f"plots/{date}-flyff-universe-character-ranking-plot-daily.png",
+            f"plots/daily/{date}-flyff-universe-character-ranking-plot-daily.png",
             bbox_inches="tight",
         )
 
@@ -233,9 +234,33 @@ def plot_all_classes_per_server(json_data, server_name, path_spielestyler=False)
         )
     else:
         plt.savefig(
-            f"plots/{date}-{server_name}-flyff-universe-character-ranking-timeline.png",
+            f"plots/timeline/{date}-{server_name}-flyff-universe-character-ranking-timeline.png",
             bbox_inches="tight",
         )
+
+
+def read_dataset(path="dataset.json"):
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return dict()
+
+
+def write_dataset(new_data, path="dataset.json"):
+    existing_data = read_dataset(path)
+
+    # merge new data
+    for date, classes in new_data.items():
+        if date not in existing_data:
+            existing_data[date] = {}
+        for class_name, servers in classes.items():
+            if class_name not in existing_data[date]:
+                existing_data[date][class_name] = {}
+            existing_data[date][class_name].update(servers)
+
+    # write
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(existing_data, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":
@@ -250,6 +275,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timeline", action="store_true", help="Create new timeline plot."
     )
+    parser.add_argument(
+        "--spielestyler-plot", action="store_true", help="Create new timeline plot."
+    )
 
     args = parser.parse_args()
 
@@ -258,6 +286,8 @@ if __name__ == "__main__":
 
     if args.new_plot:
         mapped_data = {}
+        if TODAY not in mapped_data:
+            mapped_data[TODAY] = {}
 
         # get class and level data each server
         for server in SERVERS:
@@ -270,30 +300,37 @@ if __name__ == "__main__":
 
             # map server to classes
             for class_name, class_value in class_data.items():
-                if class_name not in mapped_data:
-                    mapped_data[class_name] = {}
-                mapped_data[class_name][server] = class_value
+                if class_name not in mapped_data[TODAY]:
+                    mapped_data[TODAY][class_name] = {}
+                mapped_data[TODAY][class_name][server] = class_value
 
         # make panda frame
-        df = pd.DataFrame(mapped_data)
+        df = pd.DataFrame(mapped_data[TODAY])
 
         if DEBUG is True:
             print(df)
 
+        write_dataset(mapped_data)
         new_plot(df)
 
     if args.import_csv:
         imported_data = parse_spielestyler_file(args.import_csv)
 
-        for date in imported_data:
-            df = (
-                pd.DataFrame(imported_data[date])
-                .apply(pd.to_numeric, errors="coerce")
-                .fillna(0)
-                .astype(int)
-            )
-            new_plot(df, date, True)
+        write_dataset(imported_data)
 
-        if args.timeline:
+        if args.spielestyler_plot:
+            for date in imported_data:
+                df = (
+                    pd.DataFrame(imported_data[date])
+                    .apply(pd.to_numeric, errors="coerce")
+                    .fillna(0)
+                    .astype(int)
+                )
+                new_plot(df, date, True)
             for server in SERVERS:
                 plot_all_classes_per_server(imported_data, server, True)
+
+    if args.timeline:
+        dataset = read_dataset()
+        for server in SERVERS:
+            plot_all_classes_per_server(dataset, server, False)
