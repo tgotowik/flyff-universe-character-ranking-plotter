@@ -13,12 +13,19 @@ Of course, anyone else can use it too.
     - Put that csv file in the root directory
     - Call ```python3 flyff-character-ranking-plotter.py --import-csv ./Daten.csv```
     - This will generate plots from all collected data to plots/spielestyler
+    - In Spielestyler mode you can use timeline function to generate a timeline based by dataset
+        - ```python3 flyff-character-ranking-plotter.py --import-csv ./Daten.csv --timeline```
 
 # Example
 ## Single date plot
 ![Plot Example](plots/2025-09-16-flyff-universe-character-ranking-plot.png)
 
+## Timeline plot
+![Plot Example](plots/spielestyler-plots/timeline/2024-03-15-Burudeng-flyff-universe-character-ranking-timeline.png)
+
 
 # To Do:
 - [ ] Fonts for Japanese and Chinese server to keep original names
 - [ ] Long term plots
+- [ ] Create statefile, so theres no need to generate all new
+    - Save daily pulls to save data for further work
