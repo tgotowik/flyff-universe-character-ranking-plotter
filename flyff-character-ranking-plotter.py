@@ -72,7 +72,7 @@ def get_server_info(server_id):
 
             data.append(cols)
 
-    if DEBUG == True:
+    if DEBUG is True:
         print(server_id)
         print(level)
         print(class_counts)
@@ -127,7 +127,7 @@ def new_plot(df, date=TODAY, path_spielestyler=False):
             )
 
     # Save plots to data
-    if path_spielestyler == True:
+    if path_spielestyler is True:
         plt.savefig(
             f"plots/spielestyler-plots/{date}-flyff-universe-character-ranking-plot.png",
             bbox_inches="tight",
@@ -138,7 +138,7 @@ def new_plot(df, date=TODAY, path_spielestyler=False):
             bbox_inches="tight",
         )
 
-    if DEBUG == True:
+    if DEBUG is True:
         plt.show()
 
 
@@ -166,19 +166,25 @@ def parse_spielestyler_file(path_csv):
 
             # If "Stand" or date_pattern was found get date
             if line.startswith("Stand ") or date_pattern.match(line):
+                # date starts with "Stand"
                 if line.startswith("Stand "):
                     date_str = line.split()[1].split(";")[0]
                     date_obj = datetime.strptime(date_str, "%d.%m.%y")
                     date = date_obj.strftime("%Y-%m-%d")
+                # only date
                 elif date_pattern.match(line):
                     date_str = line.split(";")[0]
                     date_obj = datetime.strptime(date_str, "%d.%m.%Y")
                     date = date_obj.strftime("%Y-%m-%d")
+                # when date not in data set create entry
                 if date not in json_data:
                     json_data[date] = {}
+            # if server in server list
             if line.split(";")[0] in SERVERS:
+                # server name
                 server = line.split(";")[0]
                 for i, col in enumerate(line.split(";")[1:]):
+                    # check only 8 (classes)
                     if i < 8:
                         if classes_rows_number[i] not in json_data[date]:
                             json_data[date][classes_rows_number[i]] = {}
@@ -222,7 +228,7 @@ if __name__ == "__main__":
         # make panda frame
         df = pd.DataFrame(mapped_data)
 
-        if DEBUG == True:
+        if DEBUG is True:
             print(df)
 
         new_plot(df)
@@ -230,5 +236,10 @@ if __name__ == "__main__":
         imported_data = parse_spielestyler_file(args.import_csv)
 
         for date in imported_data:
-            df = pd.DataFrame(imported_data[date]).astype(int)
+            df = (
+                pd.DataFrame(imported_data[date])
+                .apply(pd.to_numeric, errors="coerce")
+                .fillna(0)
+                .astype(int)
+            )
             new_plot(df, date, True)
