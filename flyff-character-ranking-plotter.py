@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 import re
 import argparse
+import sys
 
 DEBUG = False
 
@@ -129,12 +130,12 @@ def new_plot(df, date=TODAY, path_spielestyler=False):
     # Save plots to data
     if path_spielestyler is True:
         plt.savefig(
-            f"plots/spielestyler-plots/{date}-flyff-universe-character-ranking-plot.png",
+            f"plots/spielestyler-plots/daily/{date}-flyff-universe-character-ranking-daily.png",
             bbox_inches="tight",
         )
     else:
         plt.savefig(
-            f"plots/{date}-flyff-universe-character-ranking-plot.png",
+            f"plots/{date}-flyff-universe-character-ranking-plot-daily.png",
             bbox_inches="tight",
         )
 
@@ -192,6 +193,51 @@ def parse_spielestyler_file(path_csv):
     return json_data
 
 
+def plot_all_classes_per_server(json_data, server_name, path_spielestyler=False):
+    all_data = {}
+    for date, classes in json_data.items():
+        all_data[date] = {}
+        for class_name, servers in classes.items():
+            # Prüfen, ob der Server existiert
+            value = servers.get(server_name, 0)
+            # Leere Strings zu 0
+            if value == "" or value is None:
+                value = 0
+            all_data[date][class_name] = int(value)
+
+    # DataFrame: Zeilen = Datum, Spalten = Klassen
+    df = pd.DataFrame.from_dict(all_data, orient="index")
+    df.index = pd.to_datetime(df.index)  # Datum konvertieren
+    df.sort_index(inplace=True)
+
+    # Plotten
+    plt.figure(figsize=(12, 6))
+    for class_name in df.columns:
+        plt.plot(df.index, df[class_name], marker="o", label=class_name)
+
+    plt.title(f"Entwicklung auf {server_name}")
+    plt.xlabel("Date")
+    plt.ylabel("Count")
+    plt.xticks(df.index[::2], rotation=45)
+    plt.legend()
+    plt.tight_layout()
+
+    if DEBUG is True:
+        plt.show()
+
+    # Save plots to data
+    if path_spielestyler is True:
+        plt.savefig(
+            f"plots/spielestyler-plots/timeline/{date}-{server_name}-flyff-universe-character-ranking-timeline.png",
+            bbox_inches="tight",
+        )
+    else:
+        plt.savefig(
+            f"plots/{date}-{server_name}-flyff-universe-character-ranking-timeline.png",
+            bbox_inches="tight",
+        )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Tool to plot Flyff Universe Character Ranking."
@@ -201,6 +247,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--import-csv", type=str, help="Import Spielestyler data.")
     parser.add_argument("--debug", action="store_true", help="Turn on debugging.")
+    parser.add_argument(
+        "--timeline", action="store_true", help="Create new timeline plot."
+    )
 
     args = parser.parse_args()
 
@@ -232,6 +281,7 @@ if __name__ == "__main__":
             print(df)
 
         new_plot(df)
+
     if args.import_csv:
         imported_data = parse_spielestyler_file(args.import_csv)
 
@@ -243,3 +293,7 @@ if __name__ == "__main__":
                 .astype(int)
             )
             new_plot(df, date, True)
+
+        if args.timeline:
+            for server in SERVERS:
+                plot_all_classes_per_server(imported_data, server, True)
